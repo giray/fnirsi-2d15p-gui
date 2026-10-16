@@ -32,9 +32,26 @@ def fmt_si(v, unit):
     if v == 0:
         return f'0 {unit}'
     for lim, pre, div in ((1e6, 'M', 1e6), (1e3, 'k', 1e3), (1, '', 1),
-                          (1e-3, 'm', 1e-3), (1e-6, 'µ', 1e-6), (0, 'n', 1e-9)):
+                          (1e-3, 'm', 1e-3), (1e-6, 'µ', 1e-6), (1e-9, 'n', 1e-9),
+                          (0, 'p', 1e-12)):
         if abs(v) >= lim:
             return f'{v / div:.4g} {pre}{unit}'
+
+
+def robust_range(vals, q=0.10, reach=0.5, min_n=20):
+    """Axis range that ignores outliers so a short spike doesn't flatten the trace.
+
+    Takes the q..1-q percentile span of the data and accepts values up to
+    `reach` times that span beyond it (Tukey-style fences), clipped to the true
+    min/max. Normal signals keep their full range; a spike far outside the bulk
+    is left off-scale. Few samples use the full range."""
+    if len(vals) < min_n:
+        return min(vals), max(vals)
+    v = sorted(vals)
+    k = int(len(v) * q)
+    p_lo, p_hi = v[k], v[-1 - k]
+    margin = (p_hi - p_lo) * reach
+    return max(v[0], p_lo - margin), min(v[-1], p_hi + margin)
 
 
 class MainWindow(Adw.ApplicationWindow):
@@ -222,7 +239,8 @@ class MainWindow(Adw.ApplicationWindow):
         vis = [v for t, v in zip(ts, vs) if v is not None and t >= t0]
         if not vis:
             return
-        lo, hi = min(vis), max(vis)
+        true_lo, true_hi = min(vis), max(vis)
+        lo, hi = robust_range(vis)
         span = (hi - lo) or max(abs(hi), 1e-9) * 0.1
         lo, hi = lo - span * 0.1, hi + span * 0.1
         cr.set_source_rgba(fg.red, fg.green, fg.blue, 0.12)
@@ -277,6 +295,20 @@ class MainWindow(Adw.ApplicationWindow):
         cr.show_text(fmt_si(hi, unit))
         cr.move_to(4, h - 4)
         cr.show_text(fmt_si(lo, unit))
+        # points outside the scaled range run off the chart: say so, with the true extreme
+        def marker(y, up, txt):
+            cr.move_to(4, y + (-1 if up else 1) * 4)  # small triangle drawn as a path
+            cr.line_to(12, y + (-1 if up else 1) * 4)
+            cr.line_to(8, y + (1 if up else -1) * 4)
+            cr.close_path()
+            cr.fill()
+            cr.move_to(17, y + 4)
+            cr.show_text(txt)
+
+        if true_hi > hi:
+            marker(22, False, fmt_si(true_hi, unit))
+        if true_lo < lo:
+            marker(h - 22, True, fmt_si(true_lo, unit))
         label = f'{span_t // 60} min' if span_t >= 60 else f'{span_t} s'
         ext = cr.text_extents(label)
         cr.move_to(w - ext.width - 4, h - 4)

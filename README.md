@@ -10,13 +10,20 @@ the function and unit, min/max/avg, a scrolling chart, and CSV recording.
 > That repository also contains the udev rule, the protocol notes and a command-line
 > reader (`host/dmm_read.py`).
 
+![DC voltage: live reading, min/max/avg and scrolling chart](docs/screenshots/dc-voltage.png)
+
+| Capacitance, spike left off-scale (`▲ 32 nF`) | Resistance, overload (`.OL`) |
+|---|---|
+| ![Capacitance](docs/screenshots/capacitance-offscale.png) | ![Resistance](docs/screenshots/resistance-overload.png) |
+
 ## Features
 
 - Live reading in the device's own digits, with function icons (`V⎓`, `V~`, `Ω`, …)
   and a HOLD indicator. Overload is shown as the device shows it (`.OL`).
 - Session min / max / average, reset when the function changes or on Clear.
 - Scrolling chart with a configurable window (30 s to 6 h) and trace colour; both are
-  remembered in `~/.config/fnirsi-dmm-gui/config.json`.
+  remembered in `~/.config/fnirsi-dmm-gui/config.json`. The axis ignores short spikes so
+  millivolt detail stays visible; off-scale peaks are flagged with `▲`/`▼` and their true value.
 - CSV recording to `~/Documents` (same columns as `dmm_read.py`, repeated readings collapsed).
 - Pause, Clear, automatic reconnect, and clear status banners (no device,
   permission denied, connected but silent).
