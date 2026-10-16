@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fnirsi-dmm-gui"
+version = "0.2.0"
+description = "GTK4/libadwaita live viewer for the FNIRSI 2D15P multimeter stream (mod firmware)"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-or-later" }
+# PyGObject, GTK 4 and libadwaita come from the system packages
+# (e.g. python3-gi gir1.2-gtk-4.0 gir1.2-adw-1), not from pip.
+dependencies = ["pyserial>=3.5"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+fnirsi-dmm-gui = "fnirsi_dmm_gui.app:main"
+
+[tool.setuptools]
+packages = ["fnirsi_dmm_gui"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
